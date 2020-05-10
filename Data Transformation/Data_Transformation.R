@@ -1,3 +1,4 @@
+# Cleanning the data and preparing it for analysis
 # Loading the Source file 
 data_file <- read.csv("csv-open-data-file-updated-nov19.csv")
 data_file
@@ -7,8 +8,8 @@ class(data_file)
 str(data_file)
 
 # To deal with any NA values we ehave to calculate the NA first 
+# there are missing values but it does not display here as it was not filled with any value yet 
 sum(is.na(data_file))
-
 
 # There are 20 columns are avaiable in this source.
 # From which some we have to remove because they are not in 
@@ -19,14 +20,19 @@ colnames(data_file)
 summary(data_file)
 
 # With The table() function on Sectors to find out how many sectors are there
+# showing how many sectors are there in this data 
+# to find which is amongst them have been giving lot profit
 table(data_file$SIC.Sector)
 
 # To find if there is any missing values in data frame
 sum(complete.cases(data_file))
 
+###################### Changing the Column names #######################
+
 # Changing the names of the Columns
 # Some Columns are having extra characters and extra space in name so, 
 # replace with "_" for better understanding
+str(data_file)
 
 attach(data_file)
 colnames(data_file)[which(names(data_file) == "Business.Name")] <- "business_name"
@@ -54,24 +60,64 @@ detach(data_file)
 # Number of rows in data frame
 nrow(data_file)
 
+# Structure before dealing with missing data
+str(data_file)
+
+
+
+# before doing the data removal we have to drop information who doesnt have business_name or sic_sector
+# if there is any
+
+data_file <- subset(data_file, !is.na(data_file$business_name))
+data_file <- subset(data_file, !is.na(data_file$SIC_sector))
+nrow(data_file)
+
+########################## Dealing With Misssing Data#########################################
+
 # Missing Data will be replace with NA first in some columns
 # After inserting NA in missing values we have to decide on 
 # how many NA are present in the data
 
+# Remove the missing values with NA
+# THe total number of NA in the Data frame are 2838
 
-data_file$business_name[data_file$business_name == ""] <-- NA
+data_file$financial_year_of_offer[data_file$financial_year_of_offer == ""] <-- NA
+data_file$total_assistance_offered_by_invest_ni[data_file$total_assistance_offered_by_invest_ni == ""] <-- NA
+data_file$SIC_code_5_digit[data_file$SIC_code_5_digit == ""] <-- NA
+data_file$current_address_line_1[data_file$current_address_line_1 == ""] <-- NA
+data_file$current_address_line_2[data_file$current_address_line_2 == ""] <-- NA
+data_file$current_address_line_3[data_file$current_address_line_3 == ""] <-- NA
+data_file$current_address_line_4[data_file$current_address_line_4 == ""] <-- NA
+data_file$current_address_line_5[data_file$current_address_line_5 == ""] <-- NA
+data_file$current_postcode[data_file$current_postcode == ""] <-- NA
 
 # The NA values from the data count
 sum(is.na(data_file))
-
+# There is 20040 records having NA values 
 # Count for the numbers in which no NA present
 sum(!is.na(data_file))
+# So there are 177140 records are not having NA values 
+
+# Data with having missing values incomplete data
+sum(!complete.cases(data_file))
+# the number of incomplete cases are 8771, which having NA in it.
+missing_values_data <- data_file[!complete.cases(data_file),]
+missing_values_data
+
+# This is complte data which do not have any missing values
+sum(complete.cases(data_file))
+data_without_na <- data_file[complete.cases(data_file),]
+data_without_na
+
+# It is the complete data but it was just the 20% of whole data so we nedd more data from it.
+# Thsts why need to remove some columns and have look how data is spread accross.
+# Using VIM and MICE libraries the missing data will be displayed in 
+# graphical format on graph so it is easy to decide which variable to have more NA inside.
 
 # VIM library use for the displaying and dealing the Missing values
 
 library(mice)
 md.pattern(data_file)
-
 
 # With the sortVars Attribute it gives the number of count in Each variable 
 # who having the missing information or NA
@@ -80,37 +126,22 @@ md.pattern(data_file)
 
 library(VIM)
 missing_values <- aggr(data_file, prop = FALSE, numbers = TRUE, sortVars = TRUE)
-
-# It is whown that some of the main variable which is required for analysis are having
-# no or very few missing values.
+# It is shown that some of the main variable which is required for analysis are having
+# no missing values.
 # so there is no reason to delete some data from that variable.
 # Most of the data missing was from the address fields variable.
 # and there no need for these variable further so better to delete them 
 # to avoide any false result.
-
-
-# Data with having missing values incomplete data
-sum(!complete.cases(data_file))
-missing_values_data <- data_file[!complete.cases(data_file),]
-missing_values_data
-
-
-# This is complte data which do not have any missing values
-sum(complete.cases(data_file))
-data_without_na <- data_file[complete.cases(data_file),]
-data_without_na
-
-# For displaying density of variable how it is spread across data
-
-attach(data_file)
-densityplot(jobs_to_be_created_assisted)
-densityplot(SIC_code_5_digit)
-detach(data_file)
+############################# Removing The Columns####################################
 
 # Remove the other variables which do not having any of use
 # keep variables which is use for analysis
 
-install.packages("dplyr")
+
+# Structure before deleting some columns
+str(data_file)
+
+
 library(dplyr)
 data_file_updated <- select(data_file, c(business_name, 
                                          financial_year_of_offer,
@@ -120,29 +151,16 @@ data_file_updated <- select(data_file, c(business_name,
                                          country_of_ownership,
                                          council_in_which_business_located_when_offer_made,
                                          SIC_code_5_digit,
-                                         SIC_sector,
-                                         current_address_line_1,
-                                         current_postcode))
+                                         SIC_sector))
 data_file_updated
 
-# Remove the missing values with NA
-# THe total number of NA in the Data frame are 2838
-
-data_file_updated$financial_year_of_offer[data_file_updated$financial_year_of_offer == ""] <-- NA
-data_file_updated$total_assistance_offered_by_invest_ni[data_file_updated$total_assistance_offered_by_invest_ni == ""] <-- NA
-data_file_updated$SIC_code_5_digit[data_file_updated$SIC_code_5_digit == ""] <-- NA
-data_file_updated$current_address_line_1[data_file_updated$current_address_line_1 == ""] <-- NA
-data_file_updated$current_postcode[data_file_updated$current_postcode == ""] <-- NA
-
-sum(is.na(data_file_updated))
+# structure after dealing wih missing data and removing some columns
+str(data_file_updated)
+nrow(data_file_updated)
+# There are 9859 records which is clean for analysis
 
 
-library(mice)
-md.pattern(data_file)
-
-
-library(VIM)
-missing_values <- aggr(data_file_updated, prop = FALSE, numbers = TRUE, sortVars = TRUE)
+############################ Creating the separate csv file of cleaned data######################
 
 # After watching the data and also the Removing the missing data 
 # now its clearly shown that there is no more missing data in the data frame 
@@ -150,5 +168,3 @@ missing_values <- aggr(data_file_updated, prop = FALSE, numbers = TRUE, sortVars
 # So the data is now clean and ready for the Written into csv file.
 
 write.csv(data_file_updated, "Complete_NI_Investment_data.csv")
-
-
